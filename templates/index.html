@@ -2,17 +2,31 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シンプルWebビューア</title>
+    <title>プロキシビューワー</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+        form {
+            margin-bottom: 1em;
+        }
+        iframe {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 <body>
-    <h1>URLビューワー</h1>
+    <h1>Webページビューワー</h1>
     <form method="POST">
         <input type="text" name="url" placeholder="https://example.com" size="50" value="{{ url }}">
         <button type="submit">表示</button>
     </form>
-    <hr>
-    <div>
-        {{ html | safe }}
-    </div>
+
+    {% if embedded_html %}
+        <iframe srcdoc="{{ embedded_html|safe }}"></iframe>
+    {% endif %}
 </body>
 </html>
