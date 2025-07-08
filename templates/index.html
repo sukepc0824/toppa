@@ -1,35 +1,29 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>Webビューワー</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 2em;
-        }
-        form {
-            margin-bottom: 1em;
-        }
-        .external-content {
-            border: 1px solid #ccc;
-            padding: 1em;
-            max-height: 80vh;
-            overflow: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>ページビューワー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      text-align: center;
+    }
+    input[type="text"] {
+      width: 60%;
+      font-size: 1.2em;
+    }
+    button {
+      font-size: 1.2em;
+      padding: 0.4em 1em;
+    }
+  </style>
 </head>
 <body>
-    <h1>Webページビューア</h1>
-    <form method="POST">
-        <input type="text" name="url" placeholder="https://example.com" size="50" value="{{ url }}">
-        <button type="submit">表示</button>
-    </form>
-
-    {% if embedded_html %}
-    <div class="external-content">
-        {{ embedded_html | safe }}
-    </div>
-    {% endif %}
+  <h1>URLを入力して表示</h1>
+  <form method="POST" action="/view">
+    <input type="text" name="url" placeholder="https://example.com" required>
+    <button type="submit">表示</button>
+  </form>
 </body>
 </html>
