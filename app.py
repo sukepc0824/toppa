@@ -57,6 +57,10 @@ def view():
             head_tag = soup.new_tag('head')
             head_tag.insert(0, base_tag)
             soup.insert(0, head_tag)
+            
+        # meta refresh 削除
+        for meta in soup.find_all('meta', attrs={'http-equiv': lambda x: x and x.lower() == 'refresh'}):
+            meta.decompose()
 
         # 不要な<script>などの除去をしたい場合はここで
         html = str(soup)
