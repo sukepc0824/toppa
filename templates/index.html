@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シンプルWebビューア</title>
+</head>
+<body>
+    <h1>URLビューワー</h1>
+    <form method="POST">
+        <input type="text" name="url" placeholder="https://example.com" size="50" value="{{ url }}">
+        <button type="submit">表示</button>
+    </form>
+    <hr>
+    <div>
+        {{ html | safe }}
+    </div>
+</body>
+</html>
