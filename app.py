@@ -1,6 +1,7 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, Response, redirect, render_template_string
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urljoin, quote
 
 app = Flask(__name__)
 
@@ -8,64 +9,57 @@ app = Flask(__name__)
 def index():
     return '''
     <!DOCTYPE html>
-    <html lang="ja">
-    <head>
-        <meta charset="UTF-8">
-        <title>ページビューアー</title>
-        <style>
-            body {
-                font-family: sans-serif;
-                padding: 2em;
-                text-align: center;
-            }
-            input[type="text"] {
-                width: 60%;
-                font-size: 1.2em;
-            }
-            button {
-                font-size: 1.2em;
-                padding: 0.4em 1em;
-            }
-        </style>
-    </head>
-    <body>
+    <html>
+    <head><meta charset="utf-8"><title>プロキシビューア</title></head>
+    <body style="font-family:sans-serif;text-align:center;margin-top:4em;">
         <h1>URLを入力して表示</h1>
-        <form method="POST" action="/view">
-            <input type="text" name="url" placeholder="https://example.com" required>
+        <form action="/proxy">
+            <input type="text" name="url" placeholder="https://example.com" size="50" required>
             <button type="submit">表示</button>
         </form>
     </body>
     </html>
     '''
 
-@app.route('/view', methods=['POST'])
-def view():
-    url = request.form['url']
+@app.route('/proxy')
+def proxy():
+    target_url = request.args.get('url')
+    if not target_url:
+        return redirect('/')
+
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(url, headers=headers, timeout=5)
-        response.encoding = response.apparent_encoding
-        final_url = response.url
+        resp = requests.get(target_url, headers=headers, timeout=10)
+        resp.encoding = resp.apparent_encoding
+        content_type = resp.headers.get('Content-Type', '')
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # HTMLでなければそのまま返す（画像・CSS・JSなど）
+        if not content_type.startswith('text/html'):
+            return Response(resp.content, content_type=content_type)
 
-        # <base> を挿入して相対パスの画像やCSSを解決
-        base_tag = soup.new_tag('base', href=final_url)
+        soup = BeautifulSoup(resp.text, 'html.parser')
+
+        # 相対パス対応
+        base_url = resp.url
+        base_tag = soup.new_tag('base', href=base_url)
         if soup.head:
             soup.head.insert(0, base_tag)
-        else:
-            head_tag = soup.new_tag('head')
-            head_tag.insert(0, base_tag)
-            soup.insert(0, head_tag)
-            
-        # meta refresh 削除
+
+        # meta refresh の削除
         for meta in soup.find_all('meta', attrs={'http-equiv': lambda x: x and x.lower() == 'refresh'}):
             meta.decompose()
 
-        # 不要な<script>などの除去をしたい場合はここで
-        html = str(soup)
+        # JS 削除（必要に応じて）
+        for script in soup.find_all('script'):
+            script.decompose()
 
-        # 表示ページはそのHTMLだけを描画（Flaskテンプレートのヘッダーなどなし）
+        # aタグのhrefを書き換え
+        for a in soup.find_all('a', href=True):
+            original = a['href']
+            new_url = urljoin(base_url, original)
+            a['href'] = f"/proxy?url={quote(new_url)}"
+
+        html = str(soup)
         return render_template_string(html)
 
     except Exception as e:
