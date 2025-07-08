@@ -4,33 +4,32 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    html = ''
-    url = ''
-    if request.method == 'POST':
-        url = request.form['url']
-        try:
-            headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, headers=headers, timeout=5)
-            response.encoding = response.apparent_encoding
+    return render_template("index.html")
 
-            # 最終リダイレクト先のURLを取得
-            final_url = response.url
-            html = response.text
+@app.route('/view', methods=['POST'])
+def view():
+    url = request.form['url']
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=5)
+        response.encoding = response.apparent_encoding
 
-            soup = BeautifulSoup(html, 'html.parser')
-            base_tag = soup.new_tag('base', href=final_url)  # ← 最終URLを使用
-            if soup.head:
-                soup.head.insert(0, base_tag)
-            else:
-                new_head = soup.new_tag('head')
-                new_head.insert(0, base_tag)
-                soup.insert(0, new_head)
+        final_url = response.url
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-            html = str(soup)
+        # 相対パス解決用 base タグ追加
+        base_tag = soup.new_tag('base', href=final_url)
+        if soup.head:
+            soup.head.insert(0, base_tag)
+        else:
+            new_head = soup.new_tag('head')
+            new_head.insert(0, base_tag)
+            soup.insert(0, new_head)
 
-        except Exception as e:
-            html = f"<p style='color:red;'>エラー: {e}</p>"
+        content = str(soup)
+    except Exception as e:
+        content = f"<p>読み込みエラー: {e}</p>"
 
-    return render_template("index.html", url=url, embedded_html=html)
+    return render_template("view.html", html=content)
