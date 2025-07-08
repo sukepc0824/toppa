@@ -14,11 +14,13 @@ def index():
             headers = {'User-Agent': 'Mozilla/5.0'}
             response = requests.get(url, headers=headers, timeout=5)
             response.encoding = response.apparent_encoding
+
+            # 最終リダイレクト先のURLを取得
+            final_url = response.url
             html = response.text
 
-            # <base> タグを入れて相対パス解決
             soup = BeautifulSoup(html, 'html.parser')
-            base_tag = soup.new_tag('base', href=url)
+            base_tag = soup.new_tag('base', href=final_url)  # ← 最終URLを使用
             if soup.head:
                 soup.head.insert(0, base_tag)
             else:
