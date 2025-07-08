@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template_string
 import requests
 from bs4 import BeautifulSoup
 
@@ -16,7 +16,7 @@ def index():
             response.encoding = response.apparent_encoding
             html = response.text
 
-            # 相対URLの画像やCSSを表示させるために <base> を追加
+            # <base> タグを追加して相対パス対策
             soup = BeautifulSoup(html, 'html.parser')
             base_tag = soup.new_tag('base', href=url)
             if soup.head:
@@ -25,9 +25,19 @@ def index():
                 new_head = soup.new_tag('head')
                 new_head.insert(0, base_tag)
                 soup.insert(0, new_head)
-            html = str(soup)
+
+            # iframeで表示
+            with open("templates/index.html", "r", encoding="utf-8") as f:
+                base_template = f.read()
+
+            return render_template_string(base_template, url=url, embedded_html=str(soup))
 
         except Exception as e:
             html = f"<p style='color:red;'>エラー: {e}</p>"
+            return render_template_string("""
+                <p>{{ html|safe }}</p>
+                <a href="/">戻る</a>
+            """, html=html)
 
-    return render_template('index.html', url=url, html=html)
+    # GET時
+    return render_template("index.html", url='', embedded_html='')
